@@ -1,0 +1,4 @@
+[avec verrou] owners restants : 1 ; session 2 : ERROR MN005 ERROR  ; attente de la session 2 : 2.0 s
+PASS  avec verrou : un owner reste, le second est refusé
+[sans verrou] owners restants : 0 ; session 2 :  ; attente de la session 2 : 2.0 s
+PASS  témoin : SANS verrou la course produit une org sans owner (le test détecte l'absence de verrou)

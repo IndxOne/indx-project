@@ -1,13 +1,13 @@
-R1 dernier owner se rétrograde lui-même (owner_a -> viewer) : OK:1
-   propriétaires restants de l'org A : 0  -> organisation SANS owner si 0
-R2 suppression du compte Auth du dernier owner (cascade) :
+R1 [corrigé en 0004] dernier owner se rétrograde lui-même (attendu MN005) : MN005
+   propriétaires restants de l'org A : 1  -> organisation SANS owner si 0
+R2 [mitigé : non bloquant par conception] suppression du compte Auth du dernier owner (cascade, sans JWT) :
    propriétaires de A : 0 ; membres restants : 3 ; organisation toujours en base : 1  -> org orpheline, aucun owner pour la gérer
 R3 sonde d'un UUID par un owner (oracle limité) (ajout de membre) :
    UUID inexistant            -> MN003
    compte Auth sans accès     -> MN003
    compte avec accès produit  -> OK:1  (2 réponses distinctes seulement : MN003 = « pas d'accès produit OU compte inexistant », OK = accès produit ; l'existence d'un compte n'est PAS révélée, seul le droit produit l'est — et l'ajout réussi a un effet visible)
-R4 ajout d'action dans un projet archivé (aucune règle V0) :
-   owner_b -> OK:1
+R4 [corrigé en 0004] ajout d'action dans un projet archivé (attendu MN006) :
+   owner_b -> MN006
 R5 contournement des invariants par le superuser local (session_replication_role=replica) :
    réouverture acceptée (triggers désactivés)  -> limite inhérente à Postgres, à interdire côté rôles cloud
 R6 SELECT sur schema_migrations par authenticated : 42501

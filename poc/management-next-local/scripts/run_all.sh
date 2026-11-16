@@ -20,6 +20,7 @@ run 20_garde_cible_negative   bash $S/guard_negative.sh
 run 30_tests_pgtap_rls_roles_invariants bash $S/run_tests.sh mgmt_poc_main
 run 40_migrations_independantes bash $S/migration_independence.sh
 run 50_sauvegarde_restauration  bash $S/backup_restore.sh
+run 55_course_dernier_owner     bash $S/race_last_owner.sh
 run 60_mutation_tests           bash $S/mutation_check.sh
 run 70_risques_ouverts_sondes   bash $S/open_risks_probe.sh
 echo; [ $rc -eq 0 ] && echo "TOUTES LES PREUVES : PASS" || echo "AU MOINS UNE PREUVE EN ÉCHEC"

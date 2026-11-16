@@ -1,4 +1,4 @@
-/tmp/claude-0/-home-user-indx-managment/4535bf9f-3438-5297-a7cd-68ef32976abb/scratchpad/management-next-poc/tests/01_structure_privileges.test.sql .. 
+/home/user/indx-project/poc/management-next-local/tests/01_structure_privileges.test.sql .. 
 1..18
 ok 1 - schéma management_next présent
 ok 2 - RLS activée sur toutes les tables du schéma
@@ -19,7 +19,7 @@ ok 16 - INSERT direct d'organisation refusé (passage obligé par create_organiz
 ok 17 - TRUNCATE refusé
 ok 18 - Storage : aucun objet (non applicable en V0, schéma storage absent en local)
 ok
-/tmp/claude-0/-home-user-indx-managment/4535bf9f-3438-5297-a7cd-68ef32976abb/scratchpad/management-next-poc/tests/02_rls_roles.test.sql ............. 
+/home/user/indx-project/poc/management-next-local/tests/02_rls_roles.test.sql ............. 
 1..54
 ok 1 - anon : organizations refusé
 ok 2 - anon : memberships refusé
@@ -76,7 +76,7 @@ ok 52 - owner : supprimer un projet portant des actions refusé (FK RESTRICT)
 ok 53 - owner : supprimer une org non vide refusé (FK RESTRICT)
 ok 54 - owner_a ne voit pas l'org B
 ok
-/tmp/claude-0/-home-user-indx-managment/4535bf9f-3438-5297-a7cd-68ef32976abb/scratchpad/management-next-poc/tests/03_cross_org_products.test.sql .... 
+/home/user/indx-project/poc/management-next-local/tests/03_cross_org_products.test.sql .... 
 1..27
 ok 1 - owner_b : 0 action de A visible
 ok 2 - owner_b : 0 membre de A visible
@@ -106,7 +106,7 @@ ok 25 - accès produit retiré : 0 action visible
 ok 26 - accès produit retiré : écriture refusée
 ok 27 - suppression du compte Auth : appartenances supprimées en cascade
 ok
-/tmp/claude-0/-home-user-indx-managment/4535bf9f-3438-5297-a7cd-68ef32976abb/scratchpad/management-next-poc/tests/04_invariants.test.sql ............ 
+/home/user/indx-project/poc/management-next-local/tests/04_invariants.test.sql ............ 
 1..21
 ok 1 - superuser : done -> open refusé (MN002)
 ok 2 - owner : done -> open refusé (MN002)
@@ -130,6 +130,37 @@ ok 19 - appartenance en double refusée
 ok 20 - RPC create_organization : OK pour un compte avec accès produit
 ok 21 - le créateur devient owner de sa nouvelle organisation
 ok
+/home/user/indx-project/poc/management-next-local/tests/05_owner_archive_guards.test.sql .. 
+1..28
+ok 1 - dernier owner : auto-rétrogradation refusée (MN005)
+ok 2 - dernier owner : auto-retrait refusé (MN005)
+ok 3 - l'org A garde son owner (vérifié en superuser)
+ok 4 - owner : promotion d'un second owner autorisée
+ok 5 - avec un second owner : l'ancien peut se rétrograder
+ok 6 - le nouvel unique owner ne peut pas se retirer (MN005)
+ok 7 - idem pour la rétrogradation vers editor (MN005)
+ok 8 - owner -> owner (sans effet) non bloqué
+ok 9 - accès produit retiré à editor_a : owner_a (rétrogradé) ne peut plus agir (RLS)
+ok 10 - rôle d'administration : rétrogradation du dernier owner autorisée (récupération)
+ok 11 - requête de détection : 1 organisation sans owner actif
+ok 12 - récupération : nouvel owner posé par l'administration
+ok 13 - détection : plus aucune organisation orpheline
+ok 14 - suppression du compte Auth du dernier owner de B : non bloquée (cascade)
+ok 15 - org B devenue orpheline : détectée
+ok 16 - création d'une organisation
+ok 17 - owner : suppression d'une organisation vide autorisée (cascade des appartenances)
+ok 18 - editor_a n'est plus editor (rétrogradé) : archivage refusé (0 ligne)
+ok 19 - owner (idle) : archivage autorisé
+ok 20 - projet archivé : INSERT action refusé (MN006)
+ok 21 - projet archivé : UPDATE action refusé (MN006)
+ok 22 - projet archivé : DELETE action refusé (MN006)
+ok 23 - superuser : UPDATE action en projet archivé refusé aussi (trigger)
+ok 24 - lecture des actions d'un projet archivé toujours possible
+ok 25 - réactivation du projet autorisée
+ok 26 - projet réactivé : INSERT action de nouveau possible
+ok 27 - authenticated ne peut pas désactiver les triggers (session_replication_role)
+ok 28 - service_role : aucun EXECUTE sur les fonctions du schéma (R7)
+ok
 All tests successful.
-Files=4, Tests=120,  1 wallclock secs ( 0.03 usr  0.01 sys +  0.08 cusr  0.03 csys =  0.15 CPU)
+Files=5, Tests=148,  0 wallclock secs ( 0.04 usr  0.00 sys +  0.14 cusr  0.03 csys =  0.21 CPU)
 Result: PASS

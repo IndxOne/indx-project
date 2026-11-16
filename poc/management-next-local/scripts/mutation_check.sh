@@ -21,6 +21,10 @@ mutants=(
 "M15|role_in sans contrôle product_access|create or replace function management_next.role_in(p_org uuid) returns text language sql stable security definer set search_path = '' as \$f\$ select m.role from management_next.memberships m where m.org_id = p_org and m.user_id = auth.uid() \$f\$"
 "M16E|create_organization sans contrôle product_access (candidat équivalent)|create or replace function management_next.create_organization(p_name text) returns uuid language plpgsql security definer set search_path = '' as \$f\$ declare v_uid uuid := auth.uid(); v_org uuid; begin if v_uid is null then raise exception 'MN004' using errcode='MN004'; end if; insert into management_next.organizations(name, created_by) values (p_name, v_uid) returning id into v_org; insert into management_next.memberships(org_id,user_id,role) values (v_org,v_uid,'owner'); return v_org; end \$f\$"
 "M17|search_path non figé sur role_in|alter function management_next.role_in(uuid) reset search_path"
+"M18|garde dernier owner (UPDATE) supprimée|drop trigger mn_guard_last_owner_upd on management_next.memberships"
+"M19|garde dernier owner (DELETE) supprimée|drop trigger mn_guard_last_owner_del on management_next.memberships"
+"M20|garde projet archivé supprimée|drop trigger mn_guard_archived_project on management_next.actions"
+"M21|GRANT EXECUTE service_role sur create_organization|grant execute on function management_next.create_organization(text) to service_role"
 )
 for m in "${mutants[@]}"; do
   id=${m%%|*}; rest=${m#*|}; desc=${rest%%|*}; sql=${rest#*|}; tot=$((tot+1))

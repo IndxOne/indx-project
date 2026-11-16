@@ -1,3 +1,4 @@
 appliquée : 20261116000001_mn_schema.sql
 appliquée : 20261116000002_mn_invariants.sql
 appliquée : 20261116000003_mn_rls_grants.sql
+appliquée : 20261116000004_mn_owner_archive_guards.sql

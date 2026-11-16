@@ -7,3 +7,6 @@ Garde-fous : toute exécution passe par `scripts/lib.sh` (refuse variables de ci
 
 Commandes : `bash scripts/run_all.sh` (tout) · `scripts/run_tests.sh <db>` · `scripts/migrate.sh <db>` · `scripts/migration_independence.sh` · `scripts/backup_restore.sh` · `scripts/mutation_check.sh` · `scripts/open_risks_probe.sh` · `scripts/guard_negative.sh`.
 Procédure de restauration sélective : `create schema management_next` → `pg_restore -n management_next` → `psql -f sql/restore/post_restore.sql`.
+
+Corrections de la révision 2 : voir `CORRECTIONS.md`. Test de concurrence : `scripts/race_last_owner.sh`.
+Détecter une organisation sans owner actif et la récupérer : voir `CORRECTIONS.md`.

@@ -24,7 +24,7 @@ eq "re-run du runner : DDL identique" "$M1" "$($S/fp.sh $A mn_ddl)"
 for i in 1 2; do for f in $POC_ROOT/sql/migrations/*.sql; do psql -X -v ON_ERROR_STOP=1 -q -d $A -f $f >/dev/null 2>&1 || ko "ré-exécution directe de $(basename $f) (passe $i) en erreur"; done; done
 eq "ré-exécution directe ×2 de chaque fichier : DDL identique" "$M1" "$($S/fp.sh $A mn_ddl)"
 eq "public+auth toujours inchangés" "$F0" "$($S/fp.sh $A public)"
-eq "registre : 3 migrations" "3" "$(q $A -c 'select count(*) from management_next.schema_migrations')"
+eq "registre : 4 migrations" "4" "$(q $A -c 'select count(*) from management_next.schema_migrations')"
 
 echo "== 3. Réversibilité (down puis up) =="
 psql -X -v ON_ERROR_STOP=1 -q -d $A -f $POC_ROOT/sql/down/99_mn_drop.sql >/dev/null 2>&1

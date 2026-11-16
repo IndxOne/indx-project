@@ -1,4 +1,6 @@
-# Management Next — POC local : matrice de preuves (16/11/2026)
+# Management Next — POC local : matrice de preuves (16/11/2026, révision 2)
+
+> **Révision 2** : corrections R1/R2/R4/R5/R7 préparées (migration 0004), voir `CORRECTIONS.md`. Chiffres à jour : 148 assertions pgTAP, 21 mutants, course à deux sessions. Les lignes ci-dessous décrivent la révision 1 ; les risques R1/R4 y sont désormais corrigés.
 
 Cible : PostgreSQL 16.15 **local**, socket Unix uniquement (`listen_addresses=''`), port 54329, pgTAP 1.3.2. Données 100 % fictives.
 **Ce n'est pas Supabase** : pas de Docker ni de CLI Supabase ici ; rôles `anon/authenticated/service_role`, `auth.users` et `auth.uid()` sont des *stubs* (`sql/stubs/`). Hub, Synrel, Family, Identity et le dépôt legacy n'ont pas été contactés.

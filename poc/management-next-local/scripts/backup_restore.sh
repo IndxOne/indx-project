@@ -52,34 +52,61 @@ bash $S/run_tests.sh $DST > $W/prove_dst.log 2>&1; prc=$?
 grep -E "^(All tests successful|Files=|Result:)|not ok" $W/prove_dst.log | sed 's/^/   /'
 [ $prc -eq 0 ] && ok "suites pgTAP 01-04 sur copie restaurée" || ko "suites pgTAP en échec sur la copie restaurée"
 
-echo; echo "== Partie 2 : restauration sélective d'UNE organisation (A) après incident =="
-for t in organizations:"id='$ORG_A'" memberships:"org_id='$ORG_A'" projects:"org_id='$ORG_A'" actions:"org_id='$ORG_A'"; do
-  n=${t%%:*}; w=${t#*:}; q $DST -c "copy (select * from management_next.$n where $w order by 1) to stdout with (format csv)" > $W/orgA_$n.csv
-done
-echo "export org A : $(wc -l < $W/orgA_organizations.csv) org, $(wc -l < $W/orgA_memberships.csv) membres, $(wc -l < $W/orgA_projects.csv) projets, $(wc -l < $W/orgA_actions.csv) actions"
-HASH_A() { q $DST -c "select md5(coalesce((select string_agg(x,'|' order by x) from (select o::text x from management_next.organizations o where id='$ORG_A' union all select m::text from management_next.memberships m where org_id='$ORG_A' union all select p::text from management_next.projects p where org_id='$ORG_A' union all select a::text from management_next.actions a where org_id='$ORG_A') s),''))" | cut -c1-12; }
-HASH_B() { q $DST -c "select md5(coalesce((select string_agg(x,'|' order by x) from (select o::text x from management_next.organizations o where id<>'$ORG_A' union all select m::text from management_next.memberships m where org_id<>'$ORG_A' union all select p::text from management_next.projects p where org_id<>'$ORG_A' union all select a::text from management_next.actions a where org_id<>'$ORG_A') s),''))" | cut -c1-12; }
-HA0=$(HASH_A)
-q $DST -c "insert into management_next.projects(id,org_id,name,created_by) values ('b1b1b1b1-0000-4000-8000-0000000000aa','$ORG_B','Projet créé après la sauvegarde','00000000-0000-4000-8000-0000000000b1');
-           update management_next.actions set status='done' where id='b1b1b1b1-0000-4000-8001-000000000001'" >/dev/null
-HB0=$(HASH_B); echo "org A avant incident : $HA0 | autres orgs (avec changements post-sauvegarde) : $HB0"
-q $DST -c "delete from management_next.actions where org_id='$ORG_A'; delete from management_next.projects where org_id='$ORG_A'; delete from management_next.memberships where org_id='$ORG_A'; delete from management_next.organizations where id='$ORG_A'" >/dev/null
-eq "incident : org A entièrement supprimée (actions restantes)" "0" "$(q $DST -c "select count(*) from management_next.actions where org_id='$ORG_A'")"
-t0=$(now)
-psql -X -v ON_ERROR_STOP=1 -q -d $DST <<SQL
+echo; echo "== Partie 2 : restauration sélective d'UNE organisation après incident =="
+ORG_1=20000000-0000-4000-8000-000000000001; PRJ_1=30000000-0000-4000-0001-000000000001
+export_org() { # $1=org
+  for t in organizations:"id='$1'" memberships:"org_id='$1'" projects:"org_id='$1'" actions:"org_id='$1'"; do
+    n=${t%%:*}; w=${t#*:}; q $DST -c "copy (select * from management_next.$n where $w order by 1) to stdout with (format csv)" > $W/org_${1:0:8}_$n.csv
+  done
+}
+hash_org() { q $DST -c "select md5(coalesce((select string_agg(x,'|' order by x) from (select o::text x from management_next.organizations o where id='$1' union all select m::text from management_next.memberships m where org_id='$1' union all select p::text from management_next.projects p where org_id='$1' union all select a::text from management_next.actions a where org_id='$1') s),''))" | cut -c1-12; }
+hash_others() { q $DST -c "select md5(coalesce((select string_agg(x,'|' order by x) from (select o::text x from management_next.organizations o where id<>'$1' union all select m::text from management_next.memberships m where org_id<>'$1' union all select p::text from management_next.projects p where org_id<>'$1' union all select a::text from management_next.actions a where org_id<>'$1') s),''))" | cut -c1-12; }
+restore_org() { # $1=org $2=normal|replica
+  local pre=""; [ "$2" = "replica" ] && pre="set local session_replication_role = replica;"
+  psql -X -v ON_ERROR_STOP=1 -q -d $DST <<SQL 2>&1
 begin;
-\copy management_next.organizations from '$W/orgA_organizations.csv' with (format csv)
-\copy management_next.memberships from '$W/orgA_memberships.csv' with (format csv)
-\copy management_next.projects from '$W/orgA_projects.csv' with (format csv)
-\copy management_next.actions from '$W/orgA_actions.csv' with (format csv)
+$pre
+\copy management_next.organizations from '$W/org_${1:0:8}_organizations.csv' with (format csv)
+\copy management_next.memberships from '$W/org_${1:0:8}_memberships.csv' with (format csv)
+\copy management_next.projects from '$W/org_${1:0:8}_projects.csv' with (format csv)
+\copy management_next.actions from '$W/org_${1:0:8}_actions.csv' with (format csv)
 commit;
 SQL
-rc=$?; t1=$(now)
+}
+orphans() { q $DST -c "select count(*) from management_next.actions a left join management_next.projects p on p.id=a.project_id and p.org_id=a.org_id where p.id is null"; }
+
+echo "-- 2a. org A (chemin normal, triggers actifs) --"
+export_org $ORG_A
+echo "export org A : $(wc -l < $W/org_aaaaaaaa_organizations.csv) org, $(wc -l < $W/org_aaaaaaaa_memberships.csv) membres, $(wc -l < $W/org_aaaaaaaa_projects.csv) projets, $(wc -l < $W/org_aaaaaaaa_actions.csv) actions"
+HA0=$(hash_org $ORG_A)
+q $DST -c "insert into management_next.projects(id,org_id,name,created_by) values ('b1b1b1b1-0000-4000-8000-0000000000aa','$ORG_B','Projet créé après la sauvegarde','00000000-0000-4000-8000-0000000000b1');
+           update management_next.actions set status='done' where id='b1b1b1b1-0000-4000-8001-000000000001'" >/dev/null
+HB0=$(hash_others $ORG_A); echo "org A avant incident : $HA0 | autres orgs (avec changements post-sauvegarde) : $HB0"
+q $DST -c "delete from management_next.actions where org_id='$ORG_A'; delete from management_next.projects where org_id='$ORG_A'; delete from management_next.memberships where org_id='$ORG_A'; delete from management_next.organizations where id='$ORG_A'" >/dev/null
+eq "incident : org A entièrement supprimée (actions restantes)" "0" "$(q $DST -c "select count(*) from management_next.actions where org_id='$ORG_A'")"
+t0=$(now); restore_org $ORG_A normal; rc=$?; t1=$(now)
 [ $rc -eq 0 ] && ok "restauration org A en transaction unique en $(dt $t0 $t1)" || ko "restauration org A rc=$rc"
-eq "org A restaurée à l'identique (empreinte des 4 tables)" "$HA0" "$(HASH_A)"
-eq "autres orgs NON écrasées (changements post-sauvegarde conservés)" "$HB0" "$(HASH_B)"
+eq "org A restaurée à l'identique (empreinte des 4 tables)" "$HA0" "$(hash_org $ORG_A)"
+eq "autres orgs NON écrasées (changements post-sauvegarde conservés)" "$HB0" "$(hash_others $ORG_A)"
 eq "projet créé après la sauvegarde toujours présent" "1" "$(q $DST -c "select count(*) from management_next.projects where name='Projet créé après la sauvegarde'")"
 eq "action terminée avant sauvegarde : done_at restauré tel quel" "2026-01-02 10:00:00+00" "$(q $DST -c "select done_at from management_next.actions where id='a1a1a1a1-0000-4000-8001-000000000002'")"
+
+echo "-- 2b. org avec projet ARCHIVÉ : la garde MN006 bloque aussi l'administration --"
+q $DST -c "update management_next.projects set status='archived' where id='$PRJ_1'" >/dev/null
+export_org $ORG_1; H10=$(hash_org $ORG_1); HO0=$(hash_others $ORG_1)
+echo "export org bulk 1 : $(wc -l < $W/org_20000000_actions.csv) actions dont $(q $DST -c "select count(*) from management_next.actions where project_id='$PRJ_1'") dans un projet archivé"
+out=$(q $DST -c "delete from management_next.actions where org_id='$ORG_1'" 2>&1)
+echo "$out" | grep -q MN006 && ok "même l'administration ne peut pas vider un projet archivé sans mode de restauration (MN006)" || ko "suppression en projet archivé non bloquée: $out"
+q $DST -c "begin; set local session_replication_role = replica; delete from management_next.actions where org_id='$ORG_1'; delete from management_next.projects where org_id='$ORG_1'; delete from management_next.memberships where org_id='$ORG_1'; delete from management_next.organizations where id='$ORG_1'; commit;" >/dev/null
+eq "incident : org bulk 1 supprimée (mode administration)" "0" "$(q $DST -c "select count(*) from management_next.actions where org_id='$ORG_1'")"
+out=$(restore_org $ORG_1 normal); echo "$out" | grep -q MN006 && ok "restauration en mode NORMAL refusée par MN006 (constat documenté)" || ko "restauration normale non refusée: $out"
+eq "échec atomique : rien n'a été restauré partiellement" "0" "$(q $DST -c "select count(*) from management_next.organizations where id='$ORG_1'")"
+t0=$(now); restore_org $ORG_1 replica; rc=$?; t1=$(now)
+[ $rc -eq 0 ] && ok "restauration en mode administration (session_replication_role=replica, transaction unique) en $(dt $t0 $t1)" || ko "restauration replica rc=$rc"
+eq "org bulk 1 restaurée à l'identique, projet archivé inclus" "$H10" "$(hash_org $ORG_1)"
+eq "autres orgs non écrasées" "$HO0" "$(hash_others $ORG_1)"
+eq "contrôle d'intégrité post-restauration : 0 action orpheline (FK non vérifiée en mode replica)" "0" "$(orphans)"
+eq "le projet restauré est toujours archivé" "archived" "$(q $DST -c "select status from management_next.projects where id='$PRJ_1'")"
 echo "-- Droits après restauration sélective (oracle indépendant, par utilisateur) --"
 { echo "begin; set local search_path = tap, public;"; echo "select plan(15);"
 for u in owner_a editor_a viewer_a owner_b multi idle; do for t in projects actions; do
@@ -93,7 +120,7 @@ select * from finish(); rollback;
 SQL
 } > $W/90_post_restore.test.sql
 pg_prove -h $POC_SOCK -p $POC_PORT -U postgres -d $DST --verbose $W/90_post_restore.test.sql > $W/prove_orgA.log 2>&1; prc=$?
-grep -E "not ok|^All tests|Result:|Failed|planned|^ok" $W/prove_orgA.log | sed 's/^/   /'
-[ $prc -eq 0 ] && ok "droits vérifiés après restauration sélective de l'org A" || ko "droits en échec après restauration sélective"
+grep -E "not ok|^All tests|Result:|Failed|planned" $W/prove_orgA.log | sed 's/^/   /'
+[ $prc -eq 0 ] && ok "droits vérifiés après restaurations sélectives" || ko "droits en échec après restaurations sélectives"
 echo; [ $fail -eq 0 ] && echo "RÉSULTAT sauvegarde/restauration : PASS" || echo "RÉSULTAT sauvegarde/restauration : FAIL"
 exit $fail

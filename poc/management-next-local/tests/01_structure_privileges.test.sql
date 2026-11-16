@@ -20,7 +20,7 @@ select is((select count(*) from pg_proc p join pg_namespace n on n.oid=p.proname
           0::bigint, 'aucune fonction du schéma exécutable par anon ni PUBLIC');
 select is((select array_agg(p.proname order by p.proname) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
            where n.nspname='management_next' and p.prosecdef),
-          array['create_organization','mn_member_requires_access','role_in']::name[],
+          array['create_organization','mn_guard_last_owner','mn_member_requires_access','role_in']::name[],
           'inventaire exact des fonctions SECURITY DEFINER');
 select is((select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
            where n.nspname='management_next'
