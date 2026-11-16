@@ -1,0 +1,55 @@
+== Préparation : source fictive (graine + 40 000 actions) ==
+volumes : 52 orgs, 1003 projets, 40006 actions, 56 appartenances (génération 0.45 s)
+
+== Partie 1 : sauvegarde du schéma management_next seul, restauration sélective sur copie ==
+sauvegarde : 0.13 s, 328K (format custom)
+contenu de l'archive : 6 tables de données ; schémas : postgres 
+voisin AVANT restauration : ddl=8de9b76bbe20 data=c308e384df02
+PASS  pg_restore sélectif (transaction unique) rc=0 en 0.24 s
+PASS  AVANT étape post-restauration : l'ACL du schéma est perdue (constat, échec fermé) [f]
+PASS  étape post-restauration appliquée (sql/restore/post_restore.sql)
+PASS  DDL management_next restauré = source (tables, triggers, fonctions, policies, ACL) [ddl=1b0ddce19bfa]
+PASS  données restaurées = source (orgs, membres, projets, actions, accès produit) [orgs=26900cd579a0 mem=b17be3c0290a prj=df0776b55085 act=fa1de16e5ef8 pa=14cb633fe3e6]
+PASS  voisin (Family/Identity/Auth) inchangé par la restauration [ddl=8de9b76bbe20 data=c308e384df02]
+PASS  lignes actions restaurées [40006]
+PASS  RLS activée sur les 6 tables après restauration [6]
+PASS  policies / triggers restaurés [16/5]
+PASS  témoin de sensibilité : un GRANT parasite à anon est détecté par l'empreinte
+PASS  témoin retiré : empreinte de nouveau identique [ddl=1b0ddce19bfa]
+-- Droits après restauration : suites pgTAP 01-04 rejouées sur la copie restaurée --
+   All tests successful.
+   Files=4, Tests=120,  3 wallclock secs ( 0.04 usr  0.00 sys +  0.08 cusr  0.02 csys =  0.14 CPU)
+   Result: PASS
+PASS  suites pgTAP 01-04 sur copie restaurée
+
+== Partie 2 : restauration sélective d'UNE organisation (A) après incident ==
+export org A : 1 org, 4 membres, 2 projets, 4 actions
+org A avant incident : bf6bd716bf60 | autres orgs (avec changements post-sauvegarde) : 339d76c0169b
+PASS  incident : org A entièrement supprimée (actions restantes) [0]
+PASS  restauration org A en transaction unique en 0.04 s
+PASS  org A restaurée à l'identique (empreinte des 4 tables) [bf6bd716bf60]
+PASS  autres orgs NON écrasées (changements post-sauvegarde conservés) [339d76c0169b]
+PASS  projet créé après la sauvegarde toujours présent [1]
+PASS  action terminée avant sauvegarde : done_at restauré tel quel [2026-01-02 10:00:00+00]
+-- Droits après restauration sélective (oracle indépendant, par utilisateur) --
+   ok 1 - owner_a voit exactement les projects de ses organisations
+   ok 2 - owner_a voit exactement les actions de ses organisations
+   ok 3 - editor_a voit exactement les projects de ses organisations
+   ok 4 - editor_a voit exactement les actions de ses organisations
+   ok 5 - viewer_a voit exactement les projects de ses organisations
+   ok 6 - viewer_a voit exactement les actions de ses organisations
+   ok 7 - owner_b voit exactement les projects de ses organisations
+   ok 8 - owner_b voit exactement les actions de ses organisations
+   ok 9 - multi voit exactement les projects de ses organisations
+   ok 10 - multi voit exactement les actions de ses organisations
+   ok 11 - idle voit exactement les projects de ses organisations
+   ok 12 - idle voit exactement les actions de ses organisations
+   ok 13 - viewer_a toujours en lecture seule sur A restaurée
+   ok 14 - editor_a écrit toujours dans A restaurée
+   ok 15 - family_only : toujours 0 organisation après restauration
+   ok
+   All tests successful.
+   Result: PASS
+PASS  droits vérifiés après restauration sélective de l'org A
+
+RÉSULTAT sauvegarde/restauration : PASS

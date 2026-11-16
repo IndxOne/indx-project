@@ -1,0 +1,10 @@
+Date UTC        : 2026-11-16T15:09:48Z
+Postgres        : PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+pgTAP           : pgtap--1.3.2.sql  | pg_prove pg_prove 3.36
+Cible           : socket /var/lib/mgmt_next_poc/sock, port 54329, data_directory /var/lib/mgmt_next_poc/pgdata, listen_addresses=''
+Docker/Supabase CLI : daemon Docker absent / absent
+Données         : 100 % synthétiques (@example.invalid, UUID fixes) — aucune donnée réelle
+SHA256 migrations :
+8d76380dc494524d7ac467365a4fc2d34c835a3f186b1617fce4fbe9b6d21966  sql/migrations/20261116000001_mn_schema.sql
+9f95f133961a21b948441d73d8a21cabd1ff672cc3b2a83a47501da25a071e45  sql/migrations/20261116000002_mn_invariants.sql
+b471a22ba7352dbb14f5d63944f95e180e4f3d9ecdfb74f3bffb047284d36e16  sql/migrations/20261116000003_mn_rls_grants.sql

@@ -1,0 +1,12 @@
+PASS  refusé : PGHOST distant (db.example.supabase.co)  -> REFUS: PGHOST='db.example.supabase.co' différent du socket local POC
+PASS  refusé : PGHOST=127.0.0.1 (TCP)  -> REFUS: PGHOST='127.0.0.1' différent du socket local POC
+PASS  refusé : PGPORT=5432 (port Postgres standard)  -> REFUS: PGPORT='5432' différent du port POC 54329
+PASS  refusé : DATABASE_URL défini  -> REFUS: variable DATABASE_URL définie (risque de cible distante)
+PASS  refusé : SUPABASE_DB_URL défini  -> REFUS: variable SUPABASE_DB_URL définie (risque de cible distante)
+PASS  refusé : PGPASSWORD défini  -> REFUS: variable PGPASSWORD définie (risque de cible distante)
+PASS  refusé : PGUSER=supabase_admin  -> REFUS: PGUSER='supabase_admin' inattendu
+PASS  refusé : base hors convention (postgres)  -> REFUS: base 'postgres' hors convention mgmt_poc_*
+PASS  refusé : base hors convention (hub)  -> REFUS: base 'indxone_hub' hors convention mgmt_poc_*
+PASS  refusé : base mgmt_poc_* sans sentinelle  -> REFUS: sentinelle illisible dans 'mgmt_poc_nosentinel'
+PASS  refusé : migration SQL lancée à la main sur base sans sentinelle -> REFUS: cible non locale POC (sentinelle absente)
+PASS  aucun schéma management_next créé dans la base refusée

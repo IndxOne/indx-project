@@ -1,0 +1,31 @@
+== 1. Produit voisin d'abord, puis management_next ==
+empreinte public+auth AVANT : ddl=8de9b76bbe20 data=91880e3fa8ea
+   appliquée : 20261116000001_mn_schema.sql
+   appliquée : 20261116000002_mn_invariants.sql
+   appliquée : 20261116000003_mn_rls_grants.sql
+PASS  public+auth inchangés par la migration (DDL, ACL, policies, données) [ddl=8de9b76bbe20 data=91880e3fa8ea]
+empreinte DDL management_next : ddl=1b0ddce19bfa
+== 2. Idempotence ==
+   3 migrations ignorées par le registre
+PASS  re-run du runner : DDL identique [ddl=1b0ddce19bfa]
+PASS  ré-exécution directe ×2 de chaque fichier : DDL identique [ddl=1b0ddce19bfa]
+PASS  public+auth toujours inchangés [ddl=8de9b76bbe20 data=91880e3fa8ea]
+PASS  registre : 3 migrations [3]
+== 3. Réversibilité (down puis up) ==
+PASS  schéma management_next supprimé [0]
+PASS  public+auth inchangés après DOWN [ddl=8de9b76bbe20 data=91880e3fa8ea]
+PASS  UP après DOWN : DDL identique au premier UP [ddl=1b0ddce19bfa]
+== 4. Détection de drift ==
+PASS  checksum altéré : exécution refusée -> REFUS: DRIFT sur 20261116000002_mn_invariants.sql (checksum 9f95f133961a21b948441d73d8a21cabd1ff672cc3b2a83a47501da25a071e45 ≠ registre altered)
+PASS  retour à l'état sain après correction du registre [ddl=1b0ddce19bfa]
+== 5. Indépendance vis-à-vis du legacy (aucune des 61 migrations / tables projets_*) ==
+PASS  références legacy dans les migrations [0]
+PASS  références à public.* hors sentinelle de garde [0]
+PASS  tables legacy présentes dans la base d'essai [0]
+PASS  seule dépendance externe des clés étrangères [auth.users]
+== 6. Indépendance de l'ordre / d'un autre produit ==
+PASS  management_next migré SANS produit voisin : DDL identique [ddl=1b0ddce19bfa]
+PASS  arrivée d'un autre produit/migration APRÈS : DDL management_next inchangé [ddl=1b0ddce19bfa]
+PASS  idem sur l'ordre inverse (voisin d'abord, nouvelle table après) [ddl=1b0ddce19bfa]
+
+RÉSULTAT migrations indépendantes : PASS
