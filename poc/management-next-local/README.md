@@ -10,3 +10,4 @@ Procédure de restauration sélective : `create schema management_next` → `pg_
 
 Corrections de la révision 2 : voir `CORRECTIONS.md`. Test de concurrence : `scripts/race_last_owner.sh`.
 Détecter une organisation sans owner actif et la récupérer : voir `CORRECTIONS.md`.
+Restauration sélective d'une organisation (contraintes actives) : `scripts/export_org.sh` puis `scripts/restore_org.sh`. Preuves adverses : `scripts/restore_proofs.sh`, `scripts/restore_mutation.sh`. Spécification D3b : `D3B-SPEC.md`.

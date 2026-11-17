@@ -15,16 +15,16 @@ Détection d'une organisation sans owner actif :
 `select o.id from management_next.organizations o where not exists (select 1 from management_next.memberships m join management_next.product_access a using (user_id) where m.org_id = o.id and m.role = 'owner');`
 Récupération (rôle d'administration, hors JWT) : insérer une appartenance `owner` pour un utilisateur ayant l'accès produit.
 
-## Conséquence mesurée (à connaître)
-Restaurer une organisation contenant un **projet archivé** échoue en mode normal (`MN006`, atomique, rien de restauré à moitié). Procédure : transaction avec `set local session_replication_role = replica`, puis **contrôle d'intégrité** (0 action orpheline, les clés étrangères n'étant pas vérifiées dans ce mode). Prouvé : `evidence/50_*.log` partie 2b.
+## Restauration corrigée (révision 3)
+La révision 2 imposait, pour restaurer une organisation avec un projet archivé, de passer en `session_replication_role=replica`, ce qui désactive triggers **et** clés étrangères. **Supprimé.** La procédure `scripts/restore_org.sh` garde **toutes** les contraintes PostgreSQL actives : verrou consultatif de l'organisation ; refus si l'organisation existe (`MN007`) ou si le mode de session n'est pas `origin` (`MN008`) ; projets restaurés **actifs** (table temporaire), puis actions, puis réarchivage ; contrôles d'intégrité avant COMMIT ; tout ou rien. L'ancienne méthode naïve reste refusée par `MN006` (témoin). Preuves : `evidence/50_*`, `evidence/52_*`, `evidence/62_*`.
+Incident d'administration sans contournement : réactiver les projets archivés (règle produit), puis supprimer.
 
-## Décisions à prendre par l'humain
-- **D1** Confirmer que supprimer un compte Auth ne doit **jamais** être bloqué par Management (recommandé : oui, org orpheline récupérable).
-- **D2** Confirmer « projet archivé = figé » y compris suppression d'actions (recommandé : oui ; sinon relâcher le DELETE).
-- **D3** Qui détient le rôle d'administration et la procédure de récupération en cloud (non défini ici).
+## Décisions
+- **D1, D2, D3a : validées.** D3b (principe) validé ; sa spécification est `D3B-SPEC.md` (aucun développement D3b).
+- **D3c** conservation du journal et des sauvegardes · **D3d** lieu/chiffrement des sauvegardes hors instance (0 €) · **D3e** second acteur de revue différée · **D3f** fréquence de la détection d'organisations orphelines : **ouvertes**, voir `D3B-SPEC.md` §7.
 
 ## Toujours non fait
 Rejeu sur Supabase CLI + Docker ; comportements cloud réels (privilèges par défaut, PostgREST, JWT, Storage, quotas) ; audit de sécurité indépendant ; relevé d'usage en lecture seule.
 
-## Résultats de la révision
-148 assertions pgTAP (+28) ; 21 mutants, 0 survivant réel ; course à deux sessions ; restauration sélective (org A, org avec projet archivé) ; migrations indépendantes (4) ; garde de cible (12 refus). Toutes les traces : `evidence/`.
+## Résultats (révision 3)
+148 assertions pgTAP ; 21 mutants de schéma (20 tués, 1 équivalent démontré) ; 5 mutants de la restauration (0 survivant) ; course à deux sessions avec témoin ; restauration adverse (29 contrôles : sécurité, intégrité, reprise, concurrence) ; restauration sélective (29 contrôles) ; migrations indépendantes (24 contrôles, dont retour arrière de 0004) ; garde de cible (12 refus). Toutes les traces : `evidence/`.

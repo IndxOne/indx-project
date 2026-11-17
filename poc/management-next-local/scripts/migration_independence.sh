@@ -33,6 +33,21 @@ eq "public+auth inchangés après DOWN" "$F0" "$($S/fp.sh $A public)"
 bash $S/migrate.sh $A >/dev/null
 eq "UP après DOWN : DDL identique au premier UP" "$M1" "$($S/fp.sh $A mn_ddl)"
 
+echo "== 3b. Retour arrière de la SEULE migration 0004 (0001-0003 conservées) =="
+C=mgmt_poc_mi_c
+bash $S/create_db.sh $C >/dev/null; FC0=$($S/fp.sh $C public); bash $S/migrate.sh $C 20261116000003 >/dev/null
+M3=$($S/fp.sh $C mn_ddl); bash $S/migrate.sh $C >/dev/null; M4=$($S/fp.sh $C mn_ddl)
+[ "$M3" != "$M4" ] && ok "0004 modifie bien le schéma ($M3 -> $M4)" || ko "0004 sans effet sur le schéma"
+eq "0001-0004 appliquées par le runner = empreinte du premier UP complet" "$M1" "$M4"
+psql -X -v ON_ERROR_STOP=1 -q -d $C -f $POC_ROOT/sql/down/98_mn_revert_0004.sql >/dev/null 2>&1
+eq "après retour arrière de 0004 : DDL identique à l'état 0001-0003" "$M3" "$($S/fp.sh $C mn_ddl)"
+eq "registre : 3 migrations après retour arrière" "3" "$(q $C -c 'select count(*) from management_next.schema_migrations')"
+psql -X -v ON_ERROR_STOP=1 -q -d $C -f $POC_ROOT/sql/down/98_mn_revert_0004.sql >/dev/null 2>&1 && ok "retour arrière idempotent (2e exécution sans erreur)" || ko "retour arrière non idempotent"
+bash $S/migrate.sh $C >/dev/null
+eq "ré-application de 0004 après retour arrière : DDL identique" "$M4" "$($S/fp.sh $C mn_ddl)"
+eq "public+auth inchangés par ces allers-retours" "$FC0" "$($S/fp.sh $C public)"
+dropdb -h "$POC_SOCK" -p "$POC_PORT" -U postgres --if-exists $C
+
 echo "== 4. Détection de drift =="
 q $A -c "update management_next.schema_migrations set checksum='altered' where name like '%0002%'" >/dev/null
 out=$(bash $S/migrate.sh $A 2>&1); rc=$?

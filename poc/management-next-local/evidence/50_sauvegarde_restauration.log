@@ -1,16 +1,16 @@
 == Préparation : source fictive (graine + 40 000 actions) ==
-volumes : 52 orgs, 1003 projets, 40006 actions, 56 appartenances (génération 0.68 s)
+volumes : 52 orgs, 1003 projets, 40006 actions, 56 appartenances (génération 0.74 s)
 
 == Partie 1 : sauvegarde du schéma management_next seul, restauration sélective sur copie ==
-sauvegarde : 0.15 s, 332K (format custom)
+sauvegarde : 0.13 s, 332K (format custom)
 contenu de l'archive : 6 tables de données ; schémas : postgres 
-voisin AVANT restauration : ddl=8de9b76bbe20 data=e91ae82db45e
-PASS  pg_restore sélectif (transaction unique) rc=0 en 0.24 s
+voisin AVANT restauration : ddl=8de9b76bbe20 data=8f15a7abc9f5
+PASS  pg_restore sélectif (transaction unique) rc=0 en 0.27 s
 PASS  AVANT étape post-restauration : l'ACL du schéma est perdue (constat, échec fermé) [f]
 PASS  étape post-restauration appliquée (sql/restore/post_restore.sql)
 PASS  DDL management_next restauré = source (tables, triggers, fonctions, policies, ACL) [ddl=c96fe56988d0]
-PASS  données restaurées = source (orgs, membres, projets, actions, accès produit) [orgs=46364a558bf7 mem=fa7450b472fb prj=bc8385616cf2 act=8c9f42fee66a pa=dc7531af0b13]
-PASS  voisin (Family/Identity/Auth) inchangé par la restauration [ddl=8de9b76bbe20 data=e91ae82db45e]
+PASS  données restaurées = source (orgs, membres, projets, actions, accès produit) [orgs=1e7c0ff5c572 mem=3aa9ada02d4d prj=feca834d0432 act=d5548faa3cfc pa=84f37bebeb2e]
+PASS  voisin (Family/Identity/Auth) inchangé par la restauration [ddl=8de9b76bbe20 data=8f15a7abc9f5]
 PASS  lignes actions restaurées [40006]
 PASS  RLS activée sur les 6 tables après restauration [6]
 PASS  policies / triggers restaurés [16/8]
@@ -18,31 +18,32 @@ PASS  témoin de sensibilité : un GRANT parasite à anon est détecté par l'em
 PASS  témoin retiré : empreinte de nouveau identique [ddl=c96fe56988d0]
 -- Droits après restauration : suites pgTAP 01-04 rejouées sur la copie restaurée --
    All tests successful.
-   Files=5, Tests=148,  3 wallclock secs ( 0.03 usr  0.01 sys +  0.10 cusr  0.04 csys =  0.18 CPU)
+   Files=5, Tests=148,  3 wallclock secs ( 0.05 usr  0.00 sys +  0.10 cusr  0.05 csys =  0.20 CPU)
    Result: PASS
 PASS  suites pgTAP 01-04 sur copie restaurée
 
-== Partie 2 : restauration sélective d'UNE organisation après incident ==
--- 2a. org A (chemin normal, triggers actifs) --
-export org A : 1 org, 4 membres, 2 projets, 4 actions
-org A avant incident : 60c7eaa34d51 | autres orgs (avec changements post-sauvegarde) : 8b598d1e4321
+== Partie 2 : restauration sélective d'UNE organisation (contraintes ACTIVES, aucun session_replication_role) ==
+-- 2a. org A --
+export aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa : 1 org, 4 membres, 2 projets, 4 actions
+org A avant incident : 57973d05b7f9 | autres orgs (avec changements post-sauvegarde) : 517ace7307d2
 PASS  incident : org A entièrement supprimée (actions restantes) [0]
-PASS  restauration org A en transaction unique en 0.04 s
-PASS  org A restaurée à l'identique (empreinte des 4 tables) [60c7eaa34d51]
-PASS  autres orgs NON écrasées (changements post-sauvegarde conservés) [8b598d1e4321]
-PASS  projet créé après la sauvegarde toujours présent [1]
+PASS  restauration org A, transaction unique, contraintes actives, en 0.10 s
+PASS  org A restaurée à l'identique (empreinte des 4 tables) [57973d05b7f9]
+PASS  autres orgs NON écrasées (changements post-sauvegarde conservés) [517ace7307d2]
 PASS  action terminée avant sauvegarde : done_at restauré tel quel [2026-01-02 10:00:00+00]
--- 2b. org avec projet ARCHIVÉ : la garde MN006 bloque aussi l'administration --
-export org bulk 1 : 800 actions dont 40 dans un projet archivé
-PASS  même l'administration ne peut pas vider un projet archivé sans mode de restauration (MN006)
-PASS  incident : org bulk 1 supprimée (mode administration) [0]
-PASS  restauration en mode NORMAL refusée par MN006 (constat documenté)
-PASS  échec atomique : rien n'a été restauré partiellement [0]
-PASS  restauration en mode administration (session_replication_role=replica, transaction unique) en 0.04 s
-PASS  org bulk 1 restaurée à l'identique, projet archivé inclus [95ea9ac79d2f]
-PASS  autres orgs non écrasées [d5b44ce27a0c]
-PASS  contrôle d'intégrité post-restauration : 0 action orpheline (FK non vérifiée en mode replica) [0]
-PASS  le projet restauré est toujours archivé [archived]
+-- 2b. org contenant un projet ARCHIVÉ (800 actions, dont 40 figées) --
+export 20000000-0000-4000-8000-000000000001 : 1 org, 1 membres, 20 projets, 800 actions
+PASS  règle produit : supprimer les actions d'un projet archivé est refusé, même à l'administration (MN006)
+PASS  incident : org 1 supprimée (réactivation puis suppression, sans contournement) [0]
+PASS  témoin : la méthode naïve échoue (MN006), la procédure par étapes est donc nécessaire
+PASS  témoin : échec atomique, rien restauré [0]
+PASS  restauration par étapes, contraintes actives, en 0.13 s
+PASS  org 1 restaurée à l'identique, projet archivé inclus [41aa801cb0f5]
+PASS  autres orgs non écrasées [7742b84158ac]
+PASS  le projet restauré est de nouveau archivé [archived]
+PASS  toutes les contraintes validées (aucune NOT VALID) [0]
+PASS  gel R4 effectif après restauration (INSERT en projet archivé refusé) [MN006]
+PASS  aucun usage de session_replication_role dans la procédure de restauration [0]
 -- Droits après restauration sélective (oracle indépendant, par utilisateur) --
    All tests successful.
    Result: PASS

@@ -1,5 +1,7 @@
 # Management Next — POC local : matrice de preuves (16/11/2026, révision 2)
 
+> **Révision 3** : restauration corrigée (contraintes PostgreSQL actives, plus de `session_replication_role`), `D3B-SPEC.md` (spécification D3b, aucun développement), preuves de sécurité/intégrité/concurrence/reprise/retour arrière de la restauration. Voir `CORRECTIONS.md`.
+>
 > **Révision 2** : corrections R1/R2/R4/R5/R7 préparées (migration 0004), voir `CORRECTIONS.md`. Chiffres à jour : 148 assertions pgTAP, 21 mutants, course à deux sessions. Les lignes ci-dessous décrivent la révision 1 ; les risques R1/R4 y sont désormais corrigés.
 
 Cible : PostgreSQL 16.15 **local**, socket Unix uniquement (`listen_addresses=''`), port 54329, pgTAP 1.3.2. Données 100 % fictives.

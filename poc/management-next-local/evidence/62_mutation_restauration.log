@@ -1,0 +1,8 @@
+TUÉ       R1  contrôle du mode de session (origin) retiré  (3 contrôle(s) en échec ; ex. « FAIL  mode replica non refusé:  »)
+TUÉ       R2  verrou consultatif retiré  (1 contrôle(s) en échec ; ex. « FAIL  concurrence : rc1=3 rc2=0 »)
+TUÉ       R3  projets restaurés avec leur statut d'origine (sans étape active)  (13 contrôle(s) en échec ; ex. « FAIL  restauration nominale rc=3 »)
+TUÉ       R4  contrôle d'organisation déjà présente retiré  (1 contrôle(s) en échec ; ex. « FAIL  restauration en double refusée (MN007) (attendu 'MN007', obtenu '23505') »)
+
+Mutants de restauration : 4, survivants : 0
+TUÉ       S1  désactivation injectée dans la procédure : détectée par l'analyse statique (1 ligne)
+RÉSULTAT mutation restauration : PASS

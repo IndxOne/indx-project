@@ -1,21 +1,29 @@
 == 1. Produit voisin d'abord, puis management_next ==
-empreinte public+auth AVANT : ddl=8de9b76bbe20 data=9fb0d20b221f
+empreinte public+auth AVANT : ddl=8de9b76bbe20 data=ee98f898f0f5
    appliquée : 20261116000001_mn_schema.sql
    appliquée : 20261116000002_mn_invariants.sql
    appliquée : 20261116000003_mn_rls_grants.sql
    appliquée : 20261116000004_mn_owner_archive_guards.sql
-PASS  public+auth inchangés par la migration (DDL, ACL, policies, données) [ddl=8de9b76bbe20 data=9fb0d20b221f]
+PASS  public+auth inchangés par la migration (DDL, ACL, policies, données) [ddl=8de9b76bbe20 data=ee98f898f0f5]
 empreinte DDL management_next : ddl=c96fe56988d0
 == 2. Idempotence ==
    4 migrations ignorées par le registre
 PASS  re-run du runner : DDL identique [ddl=c96fe56988d0]
 PASS  ré-exécution directe ×2 de chaque fichier : DDL identique [ddl=c96fe56988d0]
-PASS  public+auth toujours inchangés [ddl=8de9b76bbe20 data=9fb0d20b221f]
+PASS  public+auth toujours inchangés [ddl=8de9b76bbe20 data=ee98f898f0f5]
 PASS  registre : 4 migrations [4]
 == 3. Réversibilité (down puis up) ==
 PASS  schéma management_next supprimé [0]
-PASS  public+auth inchangés après DOWN [ddl=8de9b76bbe20 data=9fb0d20b221f]
+PASS  public+auth inchangés après DOWN [ddl=8de9b76bbe20 data=ee98f898f0f5]
 PASS  UP après DOWN : DDL identique au premier UP [ddl=c96fe56988d0]
+== 3b. Retour arrière de la SEULE migration 0004 (0001-0003 conservées) ==
+PASS  0004 modifie bien le schéma (ddl=1b0ddce19bfa -> ddl=c96fe56988d0)
+PASS  0001-0004 appliquées par le runner = empreinte du premier UP complet [ddl=c96fe56988d0]
+PASS  après retour arrière de 0004 : DDL identique à l'état 0001-0003 [ddl=1b0ddce19bfa]
+PASS  registre : 3 migrations après retour arrière [3]
+PASS  retour arrière idempotent (2e exécution sans erreur)
+PASS  ré-application de 0004 après retour arrière : DDL identique [ddl=c96fe56988d0]
+PASS  public+auth inchangés par ces allers-retours [ddl=8de9b76bbe20 data=d41d8cd98f00]
 == 4. Détection de drift ==
 PASS  checksum altéré : exécution refusée -> REFUS: DRIFT sur 20261116000002_mn_invariants.sql (checksum 9f95f133961a21b948441d73d8a21cabd1ff672cc3b2a83a47501da25a071e45 ≠ registre altered)
 PASS  retour à l'état sain après correction du registre [ddl=c96fe56988d0]

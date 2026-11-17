@@ -1,0 +1,40 @@
+référence : org A 8f08ce35b5e2 (1/4/2/4 org/membres/projets/actions, dont 1 projet archivé), org B 3f3a9996599a
+== SÉCURITÉ ==
+PASS  restauration refusée sur hôte distant (REFUS: PGHOST='db.example.supabase.co' différent du socket local POC)
+PASS  restauration refusée sur base hors convention
+PASS  injection via l'uuid d'organisation refusée
+PASS  schéma intact après les tentatives d'injection [1]
+PASS  restauration refusée si la base impose session_replication_role=replica (MN008)
+PASS  rien restauré par la tentative en mode replica [0/0/0/0]
+PASS  procédure de restauration : aucune désactivation de trigger/contrainte (analyse statique) [0]
+== INTÉGRITÉ ==
+PASS  restauration nominale org A (projet archivé inclus)
+PASS  org A identique à la sauvegarde [8f08ce35b5e2]
+PASS  projet A2 de nouveau archivé [archived]
+PASS  org B non touchée [3f3a9996599a]
+PASS  restauration en double refusée (MN007) [MN007]
+PASS  refus du doublon : aucune modification [8f08ce35b5e2]
+PASS  sauvegarde corrompue (pivot inter-org) : refusée par la clé étrangère composite [23503]
+PASS  échec atomique : rien restauré, org B inchangée [0/0/0/0|3f3a9996599a]
+PASS  sauvegarde corrompue (open + done_at) : refusée par la contrainte CHECK [23514]
+PASS  échec atomique [0/0/0/0]
+PASS  membre sans accès produit (compte Family) : refusé (MN003) [MN003]
+PASS  échec atomique [0/0/0/0]
+== REPRISE APRÈS ÉCHEC (retour arrière) ==
+PASS  précondition manquante (accès produit d'un membre) : refus (MN003) [MN003]
+PASS  rien d'écrit par l'échec [0/0/0/0]
+PASS  précondition rétablie puis reprise : org A identique [8f08ce35b5e2]
+== CONCURRENCE ==
+PASS  deux restaurations simultanées de la même org : une réussit, l'autre est sérialisée puis refusée (MN007)
+PASS  état final unique et identique à la sauvegarde [8f08ce35b5e2]
+PASS  aucune ligne en double [1/4/2/4]
+PASS  restaurations simultanées de deux orgs différentes : toutes deux réussies en 2.1 s (parallèles, sans interblocage)
+PASS  org A identique [8f08ce35b5e2]
+PASS  org B identique [3f3a9996599a]
+== DROITS APRÈS RESTAURATION ==
+   All tests successful.
+   Result: PASS
+   (la base porte un projet archivé en A : les attentes de 02 sur A2 sont inchangées car il n'est lu qu'en lecture)
+PASS  suites pgTAP 01-03 rejouées après restaurations (droits identiques)
+
+RÉSULTAT preuves de restauration : PASS
